@@ -33,7 +33,7 @@ const TRACKING_ID = process.env.AE_TRACKING_ID;
 const USE_SYNONYM_MAP = true;
 const SYNONYM_KEY_MAP = { 색깔: "색상" };
 
-const limit = pLimit(10); // 동시에 7개만 실행
+const limit = pLimit(5); // 동시에 7개만 실행
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  실패 무해 try/catch, 배열 정규화
@@ -483,42 +483,54 @@ async function fetchByCategory({ categoryId }) {
   //  slice(0, Math.round(divided[1].length) / 2 )
   // slice(Math.round(divided[1].length / 2), Math.round(divided[1].length))
 
-  const categoryRes = divided[13].map((item) =>
-    limit(async () => {
-      const cat = await ProductCategories.findOne({
-        cId: String(item.cId),
-      });
+  // slice(0, Math.round(divided[5].length / 3));
+  // slice(
+  //   Math.round(divided[5].length / 3),
+  //   2 * Math.round(divided[5].length / 3)
+  // );
+  // slice(2 * Math.round(divided[5].length / 3), Math.round(divided[5].length));
 
-      if (!cat?._id) {
-        console.log("카테고리 없음:", item.cId);
-        return;
-      }
+  const categoryRes = divided[5]
+    .slice(
+      Math.round(divided[5].length / 3),
+      2 * Math.round(divided[5].length / 3)
+    )
+    .map((item) =>
+      limit(async () => {
+        const cat = await ProductCategories.findOne({
+          cId: String(item.cId),
+        });
 
-      let res = await ProductDetail.find({ cId1: cat._id })
-        .populate("cId1", "cId cn")
-        .populate("cId2", "cId cn")
-        .lean({ virtuals: true });
+        if (!cat?._id) {
+          console.log("카테고리 없음:", item.cId);
+          return;
+        }
 
-      if (!res?.length) {
-        res = await ProductDetail.find({ cId2: cat._id })
+        let res = await ProductDetail.find({ cId1: cat._id })
           .populate("cId1", "cId cn")
           .populate("cId2", "cId cn")
           .lean({ virtuals: true });
-      }
 
-      const { items, raw, serverCount, filteredCount, note } =
-        await fetchByCategory({
-          categoryId: item.cId,
-        });
+        if (!res?.length) {
+          res = await ProductDetail.find({ cId2: cat._id })
+            .populate("cId1", "cId cn")
+            .populate("cId2", "cId cn")
+            .lean({ virtuals: true });
+        }
 
-      console.log("cid:", item.cId);
-      console.log("items:", items.length);
-      console.log("res:", res.length);
+        const { items, raw, serverCount, filteredCount, note } =
+          await fetchByCategory({
+            categoryId: item.cId,
+          });
 
-      listTasks.item.push(...items);
-      listTasks.dataBaseRes.push(...res);
-    })
-  );
+        console.log("cid:", item.cId);
+        console.log("items:", items.length);
+        console.log("res:", res.length);
+
+        listTasks.item.push(...items);
+        listTasks.dataBaseRes.push(...res);
+      })
+    );
 
   await Promise.allSettled(categoryRes, listTasks);
 
