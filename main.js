@@ -33,7 +33,7 @@ const TRACKING_ID = process.env.AE_TRACKING_ID;
 const USE_SYNONYM_MAP = true;
 const SYNONYM_KEY_MAP = { 색깔: "색상" };
 
-const limit = pLimit(5); // 동시에 7개만 실행
+const limit = pLimit(8); // 동시에 8개만 실행
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  실패 무해 try/catch, 배열 정규화
@@ -479,16 +479,16 @@ async function fetchByCategory({ categoryId }) {
   const listTasks = { item: [], dataBaseRes: [] };
 
   // ---- divided[1]은 2개로 나눠서 배포
-  //  slice(0, Math.round(divided[1].length))
-  // slice(Math.round(divided[1].length / 2), Math.round(divided[1].length))
+  //  .slice(0, Math.round(divided[1].length / 2))
+  // .slice(Math.round(divided[1].length / 2), Math.round(divided[1].length))
 
   // ---- divided[5]은 3개로 나눠서 배포
-  // slice(0, Math.round(divided[5].length / 3))
-  // slice(
+  // .slice(0, Math.round(divided[5].length / 3));
+  // .slice(
   //   Math.round(divided[5].length / 3),
   //   2 * Math.round(divided[5].length / 3)
-  // )
-  // slice(2 * Math.round(divided[5].length / 3), Math.round(divided[5].length))
+  // );
+  // .slice(2 * Math.round(divided[5].length / 3), Math.round(divided[5].length));
 
   const categoryRes = divided[13]
     // .slice(2 * Math.round(divided[5].length / 3), Math.round(divided[5].length))
@@ -506,14 +506,14 @@ async function fetchByCategory({ categoryId }) {
         let res = await ProductDetail.find({ cId1: cat._id })
           .populate("cId1", "cId cn")
           .populate("cId2", "cId cn")
-          .select("_id vol pl ")
+          .select("_id vol  ")
           .lean();
 
         if (!res?.length) {
           res = await ProductDetail.find({ cId2: cat._id })
             .populate("cId1", "cId cn")
             .populate("cId2", "cId cn")
-            .select("_id vol pl ")
+            .select("_id vol  ")
             .lean();
         }
 
@@ -524,7 +524,7 @@ async function fetchByCategory({ categoryId }) {
 
         console.log("cid:", item.cId);
         console.log("items:", items.length);
-        console.log("res:", res[0]);
+        console.log("res:", res.length);
 
         // fetchByCategory안에 filtered 변수도 볼 것 !
 
